@@ -79,13 +79,13 @@ flutter run
 
 ### Frontend (App Móvil & Web)
 - **Framework**: [Flutter](https://flutter.dev/)
-- **Gestor de Estado**: Riverpod 3.x (`NotifierProvider`)
+- **Gestor de Estado**: Riverpod 3.3.1
 - **Estilos**: Theming y Localization adaptativa.
 
 ### Backend (Servicio API)
 - **Framework**: Python 3 con [FastAPI](https://fastapi.tiangolo.com/)
 - **ORM**: SQLAlchemy
-- **Autenticación**: AuthLib/OAuth2
+- **Autenticación**: OAuth2
 
 ### Base de Datos & Infraestructura
 - **Base de datos**: PostgreSQL
@@ -105,13 +105,23 @@ flutter run
   <i>Desarrollado con ❤️ para mejorar la gestión académica.</i>
 </div>
 
-## 👨‍💻 Autoría
+## 👥 Créditos y Autoría
 
-Este proyecto ha sido desarrollado por:
+Este proyecto ha sido posible gracias al trabajo de dos equipos en diferentes etapas:
+
+### 🚀 Inicio del Proyecto (Versión Original)
+Desarrollado inicialmente por:
 
 - [Alejandro Sánchez Monzón](https://github.com/AlejandroSanchezMonzon)
 - [Mireya Sánchez Pinzón](https://github.com/Mireyasanche)
 - [Rubén García-Redondo Marín](https://github.com/RuyMi)
+
+### 🏁 Finalización y Versión Actual
+Evolución, rediseño y despliegue final por:
+
+- [Gonzalo Santiago Ariza](https://github.com/gonnzaxx)
+- [Álvaro Lorenzo Carrillo](https://github.com/lorenZZo30)
+- [Jorge Sepúlveda Martín](https://github.com/JorgeSepul)
 
 ## 📚 Documentación
 
