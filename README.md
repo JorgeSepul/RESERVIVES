@@ -52,8 +52,8 @@ La forma más rápida y fácil de levantar todo el ecosistema de **Reservives** 
 
 1. **Clona el repositorio**
    ```bash
-   git clone https://github.com/gonnzaxx/RESERVIVES-DESARROLLO.git
-   cd RESERVIVES-APP
+   git clone https://github.com/gonnzaxx/RESERVIVES.git
+   cd RESERVIVES
    ```
 
 2. **Levanta los contenedores**
