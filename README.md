@@ -1,5 +1,3 @@
-[![Logo del IES Luis Vives](https://iesluisvives.es/Design/Themes/IESluisvivies/Images/logo.png)](https://iesluisvives.es/)
-
 <div align="center">
   <img src="https://iesluisvives.es/Design/Themes/IESluisvivies/Images/logo.png" width="200" alt="Reservives Logo" />
   <h1>📅 RESERVIVES APP</h1>
