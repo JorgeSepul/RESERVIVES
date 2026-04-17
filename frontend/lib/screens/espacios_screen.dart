@@ -12,7 +12,7 @@ import 'package:gestion_espacios_app/widgets/space_image_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../models/colors.dart';
+import '../models/colors.dart';
 
 /// Widget que muestra la pantalla de espacios.
 class EspaciosScreen extends StatefulWidget {

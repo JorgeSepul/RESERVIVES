@@ -9,7 +9,7 @@ import 'package:gestion_espacios_app/widgets/error_widget.dart';
 import 'package:gestion_espacios_app/widgets/user_image_widget.dart';
 import 'package:provider/provider.dart';
 
-import '../../widgets/alert_widget.dart';
+import '../widgets/alert_widget.dart';
 
 /// Clase que representa la pantalla de registro de usuario.
 class RegistroUsuarioScreen extends StatefulWidget {
