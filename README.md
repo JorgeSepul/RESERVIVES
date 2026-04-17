@@ -33,9 +33,8 @@ El proyecto se divide en diferentes directorios principales:
 ```text
 📦 RESERVIVES-APP
  ┣ 📂 backend            # API RESTFUL construida con FastAPI (Python) & SQLAlchemy
- ┣ 📂 frontend           # Interfaz de usuario construida con Flutter y Riverpod 3.x
- ┣ 📂 database           # Scripts de inicialización y migración (PostgreSQL)
- ┣ 📂 Mockups            # Recursos de diseño gráfico, logos y referencias UI
+ ┣ 📂 frontend           # Interfaz de usuario construida con Flutter y Riverpod 3.3.1
+ ┣ 📂 database           # Ficheros de inicialización y migración (PostgreSQL)
  ┗ 📜 docker-compose.yml # Orquestación de múltiples contenedores
 ```
 
@@ -98,12 +97,6 @@ flutter run
 3. Haz Commit a tus cambios (`git commit -m 'Add some AmazingFeature'`)
 4. Haz Push al Branch (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
-
----
-
-<div align="center">
-  <i>Desarrollado con ❤️ para mejorar la gestión académica.</i>
-</div>
 
 ## 👥 Créditos y Autoría
 
