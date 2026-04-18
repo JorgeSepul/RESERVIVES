@@ -1,226 +1,266 @@
-/// Alejandro Sánchez Monzón
-/// Mireya Sánchez Pinzón
-/// Rubén García-Redondo Marín
-
-import 'package:flutter/foundation.dart';
+import 'dart:ui';
+import 'dart:math' as math;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:gestion_espacios_app/providers/auth_provider.dart';
-import 'package:gestion_espacios_app/widgets/error_widget.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:reservives/config/app_theme.dart';
+import 'package:reservives/l10n/app_localizations.dart';
+import 'package:reservives/providers/auth_provider.dart';
+import 'package:reservives/services/auth_service.dart';
+import 'package:reservives/widgets/design_system.dart';
 
-/// Widget que muestra la imagen seleccionada.
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
-  _LoginScreen createState() => _LoginScreen();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-/// Clase que muestra la pantalla de inicio de sesión.
-class _LoginScreen extends State<LoginScreen> {
-  /// El nombre de usuario.
-  String username = '';
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  bool _isLoadingMicrosoft = false;
 
-  /// La contraseña.
-  String password = '';
+  Future<void> _loginMicrosoft() async {
+    setState(() => _isLoadingMicrosoft = true);
+    final error = await ref.read(authServiceProvider).loginWithMicrosoft();
+    if (mounted) setState(() => _isLoadingMicrosoft = false);
 
-  /// Indica si se está cargando.
-  bool isLoading = false;
+    if (!mounted) return;
+    if (error != null) {
+      RvAlerts.error(context, error);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    /// Se obtiene el proveedor de autenticación.
-    var authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.color;
+    final isDark = theme.brightness == Brightness.dark;
 
-    /// Se obtiene el tema actual.
-    var theme = Theme.of(context);
+    return Scaffold(
+      body: Stack(
+        children: [
+          const _AnimatedBackground(),
 
-    return GestureDetector(
-      onTap: () {
-        FocusScopeNode currentFocus = FocusScope.of(context);
-
-        if (!currentFocus.hasPrimaryFocus) currentFocus.unfocus();
-      },
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        body: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: Container(
-              margin: const EdgeInsets.all(20),
-              child: Center(
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 450),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Image.asset('assets/images/logo.png'),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'Gestión de espacios',
-                      style: TextStyle(
-                        fontFamily: 'KoHo',
-                        fontSize: 35,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(height: 30),
+                    // Logo sin círculo envolvente
+                    Hero(
+                      tag: 'ies-logo-hero',
+                      child: Image.asset(
+                        'assets/images/logo_luis_vives.png',
+                        width: 140, // Ligeramente más grande al no tener círculo
+                        fit: BoxFit.contain,
                       ),
+                    ).animate().scale(duration: 600.ms, curve: Curves.easeOutBack),
+
+                    const SizedBox(height: 40),
+
+                    Text(
+                      context.tr('login.welcomeEyebrow'),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        letterSpacing: 2.0,
+                        fontWeight: FontWeight.w800,
+                        color: muted?.withOpacity(0.7),
+                      ),
+                    ).animate().fadeIn(delay: 200.ms),
+
+                    const SizedBox(height: 8),
+
+                    // Título con negrita máxima
+                    Text(
+                      context.tr('login.title'),
                       textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 50),
-                    SizedBox(
-                      width: 400,
-                      child: TextField(
-                        onChanged: (value) => username = value,
-                        cursorColor: theme.colorScheme.secondary,
-                        style: TextStyle(
-                          color: theme.colorScheme.surface,
-                          fontFamily: 'KoHo',
-                        ),
-                        decoration: InputDecoration(
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
-                          labelText: 'Nombre de usuario',
-                          labelStyle: TextStyle(
-                              fontFamily: 'KoHo',
-                              color: theme.colorScheme.onSurface),
-                          prefixIcon: Icon(Icons.person,
-                              color: theme.colorScheme.onSurface),
-                        ),
+                      style: theme.textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.w900, // Máximo grosor
+                        height: 1.1,
+                        fontSize: 32,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: 400,
-                      child: TextField(
-                        onChanged: (value) => password = value,
-                        cursorColor: theme.colorScheme.secondary,
-                        obscureText: true,
-                        style: TextStyle(
-                          color: theme.colorScheme.surface,
-                          fontFamily: 'KoHo',
-                        ),
-                        decoration: InputDecoration(
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
-                          labelText: 'Contraseña',
-                          labelStyle: TextStyle(
-                              fontFamily: 'KoHo',
-                              color: theme.colorScheme.onSurface),
-                          prefixIcon: Icon(Icons.lock,
-                              color: theme.colorScheme.onSurface),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          isLoading = true;
-                        });
+                    ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
 
-                        authProvider.login(username, password).then(
-                          (usuario) {
-                            Navigator.pushNamed(context, '/home');
+                    const SizedBox(height: 40),
 
-                            setState(() {
-                              isLoading = false;
-                            });
-                          },
-                        ).catchError((error) {
-                          setState(() {
-                            isLoading = false;
-                          });
-
-                          showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return MyErrorMessageDialog(
-                                    title: 'Error al iniciar sesión',
-                                    description: error.toString().substring(
-                                        error.toString().indexOf(':') + 1));
-                              });
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        backgroundColor: theme.colorScheme.secondary,
-                      ),
-                      child: Text('Validar',
-                          style: TextStyle(
-                              color: theme.colorScheme.onSecondary,
-                              fontFamily: 'KoHo')),
-                    ),
-                    if (isLoading)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 20),
-                        child: CircularProgressIndicator.adaptive(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                              theme.colorScheme.secondary),
-                        ),
-                      ),
-                    const SizedBox(height: 10),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/user-register');
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: theme.colorScheme.onBackground,
-                      ),
-                      child: Text(
-                        '¿Aún no estás registrado? Regístrate aquí.',
-                        style: TextStyle(
-                          fontFamily: 'KoHo',
-                          color: theme.colorScheme.secondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    Visibility(
-                      visible:
-                          defaultTargetPlatform != TargetPlatform.android &&
-                              defaultTargetPlatform != TargetPlatform.iOS,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/login-bo');
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: theme.colorScheme.onBackground,
-                        ),
-                        child: Text(
-                          'Acceso al área privada del centro.',
-                          style: TextStyle(
-                            fontFamily: 'KoHo',
-                            color: theme.colorScheme.secondary,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(32),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                        child: Container(
+                          padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.black.withOpacity(0.4)
+                                : Colors.white.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(32),
+                            border: Border.all(
+                              color: isDark
+                                  ? Colors.white.withOpacity(0.1)
+                                  : Colors.white.withOpacity(0.4),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 24,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.center,
+                          child: Column(
+                            children: [
+                              RvPrimaryButton(
+                                onTap: _isLoadingMicrosoft ? null : _loginMicrosoft,
+                                isLoading: _isLoadingMicrosoft,
+                                label: context.tr('login.signIn'),
+                                customIcon: Image.asset(
+                                  'assets/icons/microsoft_icon.png',
+                                  width: 30,
+                                  height: 30,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
+                    ).animate(delay: 400.ms).fadeIn().slideY(begin: 0.1),
                   ],
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnimatedBackground extends StatefulWidget {
+  const _AnimatedBackground();
+
+  @override
+  State<_AnimatedBackground> createState() => _AnimatedBackgroundState();
+}
+
+class _AnimatedBackgroundState extends State<_AnimatedBackground> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 15),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 600;
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: isDark
+                  ? [
+                Color.lerp(const Color(0xFF090B10), AppColors.accentPurple, 0.05)!,
+                const Color(0xFF090B10),
+                Color.lerp(const Color(0xFF090B10), AppColors.primaryBlue, 0.05)!,
+              ]
+                  : [
+                const Color(0xFFF9FAFF),
+                const Color(0xFFF2F4FF),
+                const Color(0xFFE9F0FF),
+              ],
+              stops: [
+                0.0,
+                0.5 + 0.1 * (math.sin(_controller.value * 2 * math.pi)),
+                1.0,
+              ],
+            ),
+          ),
+          child: Stack(
+            children: [
+              _Blob(
+                color: AppColors.primaryBlue.withOpacity(isDark ? 0.15 : 0.4),
+                size: isMobile ? size.width * 0.6 : 400,
+                offset: Offset(
+                  math.sin(_controller.value * 2 * math.pi) * (isMobile ? 20 : 50),
+                  math.cos(_controller.value * 2 * math.pi) * (isMobile ? 15 : 30),
+                ),
+                alignment: Alignment.topRight,
+              ),
+              _Blob(
+                color: AppColors.accentPurple.withOpacity(isDark ? 0.1 : 0.3),
+                size: isMobile ? size.width * 0.4 : 300,
+                offset: Offset(
+                  math.cos(_controller.value * 2 * math.pi) * (isMobile ? 15 : 40),
+                  math.sin(_controller.value * 2 * math.pi) * (isMobile ? 25 : 60),
+                ),
+                alignment: Alignment.bottomLeft,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _Blob extends StatelessWidget {
+  final Color color;
+  final double size;
+  final Offset offset;
+  final Alignment alignment;
+
+  const _Blob({
+    required this.color,
+    required this.size,
+    required this.offset,
+    required this.alignment,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    return Align(
+      alignment: alignment,
+      child: Transform.translate(
+        offset: offset,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: color,
+                blurRadius: isMobile ? 60 : 100,
+                spreadRadius: isMobile ? 10 : 20,
+              ),
+            ],
           ),
         ),
       ),
