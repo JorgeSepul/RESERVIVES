@@ -1,405 +1,208 @@
-/// Alejandro Sánchez Monzón
-/// Mireya Sánchez Pinzón
-/// Rubén García-Redondo Marín
+/// RESERVIVES - Proveedores de Reservas.
+library;
 
-import 'dart:convert';
+import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:gestion_espacios_app/models/reserva.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:reservives/models/reserva.dart';
+import 'package:reservives/providers/auth_provider.dart';
+import 'package:reservives/providers/servicio_provider.dart';
+import 'package:reservives/services/api_client.dart';
 
-/// Clase que gestiona las reservas.
-class ReservasProvider with ChangeNotifier {
-  /// Token de autenticación.
-  final String? _token;
+final misReservasProvider =
+AsyncNotifierProvider.autoDispose<MisReservasNotifier, List<Reserva>>(
+      () => MisReservasNotifier(),
+);
 
-  /// Id del usuario.
-  final String? _userId;
-
-  /// Lista de reservas.
-  List<Reserva> _reservas = [];
-
-  /// Lista de mis reservas.
-  List<Reserva> _misReservas = [];
-
-  /// Lista de reservas por usuario.
-  List<Reserva> _reservasByUser = [];
-
-  /// Lista de reservas por espacio.
-  List<Reserva> _reservasBySpace = [];
-
-  /// Lista de reservas por estado.
-  List<Reserva> _reservasByStatus = [];
-
-  /// Lista de reservas por hora.
-  List<Reserva> _reservasByTime = [];
-
-  /// Getter de la lista de reservas.
-  List<Reserva> get reservas => _reservas;
-
-  /// Getter de la lista de reservas por usuario.
-  List<Reserva> get reservasByUser => _reservasByUser;
-
-  /// Getter de la lista de mis reservas.
-  List<Reserva> get misReservas => _misReservas;
-
-  /// Getter de la lista de reservas por espacio.
-  List<Reserva> get reservasBySpace => _reservasBySpace;
-
-  /// Getter de la lista de reservas por estado.
-  List<Reserva> get reservasByStatus => _reservasByStatus;
-
-  /// Getter de la lista de reservas por hora.
-  List<Reserva> get reservasByTime => _reservasByTime;
-
-  ReservasProvider(this._token, this._userId) {
-    fetchMyReservasNotFinished();
-    fetchReservas();
+class MisReservasNotifier extends AsyncNotifier<List<Reserva>> {
+  @override
+  Future<List<Reserva>> build() async {
+    final apiClient = ref.read(apiClientProvider);
+    final response = await apiClient.get('/reservas/');
+    return (response as List)
+        .map((e) => Reserva.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
-  /// Url base de la API.
-  String baseUrl = 'http://app.iesluisvives.org:1212';
-
-  /// Función que obtiene las reservas.
-  Future<void> fetchReservas() async {
-    final response = await http.get(Uri.parse('$baseUrl/bookings'),
-        headers: {'Authorization': 'Bearer $_token'});
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final results = data['data'] as List<dynamic>;
-      _reservas = results
-          .map((reserva) => Reserva(
-                uuid: reserva['uuid'],
-                userId: reserva['userId'],
-                spaceId: reserva['spaceId'],
-                startTime: reserva['startTime'],
-                endTime: reserva['endTime'],
-                observations: reserva['observations'],
-                status: reserva['status'],
-                userName: reserva['userName'],
-                spaceName: reserva['spaceName'],
-                image: reserva['image'],
-              ))
-          .toList();
-
-      notifyListeners();
-    } else {
-      _reservas = [];
-      notifyListeners();
-    }
-  }
-
-  /// Función que obtiene las reservas por uuid.
-  Future<Reserva?> fetchReservaByUuid(String uuid) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/bookings/$uuid'),
-      headers: {'Authorization': 'Bearer $_token'},
+  List<Reserva> _currentList() {
+    return state.maybeWhen(
+      data: (items) => List<Reserva>.from(items),
+      orElse: () => <Reserva>[],
     );
+  }
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return Reserva(
-        uuid: data['uuid'],
-        userId: data['userId'],
-        spaceId: data['spaceId'],
-        startTime: data['startTime'],
-        endTime: data['endTime'],
-        observations: data['observations'],
-        status: data['status'],
-        userName: data['userName'],
-        spaceName: data['spaceName'],
-        image: data['image'],
+  void setFromSnapshot(List<Reserva> snapshot) {
+    state = AsyncData(List<Reserva>.from(snapshot));
+  }
+
+  void insertOptimistic(Reserva reserva) {
+    final current = _currentList();
+    current.insert(0, reserva);
+    current.sort((a, b) => b.fechaInicio.compareTo(a.fechaInicio));
+    state = AsyncData(current);
+  }
+
+  void replaceOptimistic(String tempId, Reserva real) {
+    final current = _currentList();
+    final index = current.indexWhere((r) => r.id == tempId);
+    if (index == -1) {
+      current.insert(0, real);
+    } else {
+      current[index] = real;
+    }
+    current.sort((a, b) => b.fechaInicio.compareTo(a.fechaInicio));
+    state = AsyncData(current);
+  }
+
+  void markCancelledOptimistic(String reservaId) {
+    final current = _currentList();
+
+    state = AsyncData(
+      current
+          .map((r) => r.id == reservaId ? _copyReservaWithEstado(r, EstadoReserva.cancelada) : r)
+          .toList(),
+    );
+  }
+}
+
+final activityHistoryProvider = Provider.autoDispose<AsyncValue<List<Reserva>>>((ref) {
+  final reservasAsync = ref.watch(misReservasProvider);
+  final serviciosAsync = ref.watch(misReservasServiciosProvider);
+
+  return reservasAsync.when(
+    data: (reservas) {
+      return serviciosAsync.when(
+        data: (servicios) => AsyncData(_mergeAndSort(reservas, servicios)),
+        loading: () => const AsyncLoading(),
+        error: (error, stackTrace) => AsyncError(error, stackTrace),
       );
-    } else {
-      return null;
-    }
-  }
+    },
+    loading: () => const AsyncLoading(),
+    error: (error, stackTrace) => AsyncError(error, stackTrace),
+  );
+});
 
-  /// Función que obtiene mis reservas.
-  Future<void> fetchMyReservas() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/bookings/user/$_userId'),
-      headers: {'Authorization': 'Bearer $_token'},
+List<Reserva> _mergeAndSort(List<Reserva> a, List<Reserva> b) {
+  final all = [...a, ...b];
+  all.sort((x, y) => y.fechaInicio.compareTo(x.fechaInicio));
+  return all;
+}
+
+final crearReservaProvider =
+AsyncNotifierProvider<CrearReservaNotifier, Reserva?>(
+  CrearReservaNotifier.new,
+);
+
+class CrearReservaNotifier extends AsyncNotifier<Reserva?> {
+  @override
+  Future<Reserva?> build() async => null;
+
+  Future<bool> crearReserva(
+      String espacioId,
+      DateTime fecha,
+      String tramoId,
+      String? observaciones,
+      ) async {
+    final user = ref.read(authProvider).user;
+    final previousReservas = ref.read(misReservasProvider).maybeWhen(
+      data: (items) => List<Reserva>.from(items),
+      orElse: () => <Reserva>[],
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final results = data['data'] as List<dynamic>;
-      _misReservas = results
-          .map((reserva) => Reserva(
-                uuid: reserva['uuid'],
-                userId: reserva['userId'],
-                spaceId: reserva['spaceId'],
-                startTime: reserva['startTime'],
-                endTime: reserva['endTime'],
-                observations: reserva['observations'],
-                status: reserva['status'],
-                userName: reserva['userName'],
-                spaceName: reserva['spaceName'],
-                image: reserva['image'],
-              ))
-          .toList();
-
-      notifyListeners();
-    } else {
-      _misReservas = [];
-      notifyListeners();
-    }
-  }
-
-  /// Función que obtiene las reservas por espacio que no han finalizado.
-  Future<void> fetchMyReservasNotFinished() async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/bookings/not-finished/user/$_userId'),
-      headers: {'Authorization': 'Bearer $_token'},
+    final tempId = 'optimistic-reserva-${DateTime.now().microsecondsSinceEpoch}';
+    final fechaOptimista = DateTime(fecha.year, fecha.month, fecha.day);
+    final optimistic = Reserva(
+      id: tempId,
+      usuarioId: user?.id ?? '',
+      espacioId: espacioId,
+      fechaInicio: fechaOptimista,
+      fechaFin: fechaOptimista.add(const Duration(hours: 1)),
+      observaciones: observaciones,
+      estado: EstadoReserva.pendiente,
+      tokensConsumidos: 0,
+      tramoId: tramoId,
+      nombreUsuario: user == null ? null : '${user.nombre} ${user.apellidos}',
+      nombreEspacio: null,
+      tipoEspacio: null,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final results = data['data'] as List<dynamic>;
-      _misReservas = results
-          .map((reserva) => Reserva(
-                uuid: reserva['uuid'],
-                userId: reserva['userId'],
-                spaceId: reserva['spaceId'],
-                startTime: reserva['startTime'],
-                endTime: reserva['endTime'],
-                observations: reserva['observations'],
-                status: reserva['status'],
-                userName: reserva['userName'],
-                spaceName: reserva['spaceName'],
-                image: reserva['image'],
-              ))
-          .toList();
+    ref.read(misReservasProvider.notifier).insertOptimistic(optimistic);
+    state = AsyncData(optimistic);
 
-      notifyListeners();
-    } else {
-      _misReservas = [];
-      notifyListeners();
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      // Formatear fecha como YYYY-MM-DD
+      final fechaStr = '${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}';
+      final response = await apiClient.post('/reservas/', body: {
+        'espacio_id': espacioId,
+        'fecha': fechaStr,
+        'tramo_id': tramoId,
+        if (observaciones != null) 'observaciones': observaciones,
+      });
+
+      final reserva = Reserva.fromJson(response as Map<String, dynamic>);
+      ref.read(misReservasProvider.notifier).replaceOptimistic(tempId, reserva);
+
+      unawaited(ref.read(authProvider.notifier).refreshCurrentUser());
+
+      state = AsyncData(reserva);
+      return true;
+    } catch (error, stackTrace) {
+      ref.read(misReservasProvider.notifier).setFromSnapshot(previousReservas);
+      state = AsyncError(error, stackTrace);
+      return false;
     }
   }
 
-  /// Función que obtiene las reservas por usuario.
-  Future<void> fetchReservasByUser(String userUuid) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/bookings/user/$userUuid'),
-      headers: {'Authorization': 'Bearer $_token'},
+  Future<bool> cancelarReserva(String reservaId) async {
+    final previousReservas = ref.read(misReservasProvider).maybeWhen(
+      data: (items) => List<Reserva>.from(items),
+      orElse: () => <Reserva>[],
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final results = data['data'] as List<dynamic>;
-      _reservasByUser = results
-          .map((reserva) => Reserva(
-                uuid: reserva['uuid'],
-                userId: reserva['userId'],
-                spaceId: reserva['spaceId'],
-                startTime: reserva['startTime'],
-                endTime: reserva['endTime'],
-                observations: reserva['observations'],
-                status: reserva['status'],
-                userName: reserva['userName'],
-                spaceName: reserva['spaceName'],
-                image: reserva['image'],
-              ))
-          .toList();
+    ref.read(misReservasProvider.notifier).markCancelledOptimistic(reservaId);
 
-      notifyListeners();
-    } else {
-      _reservasByUser = [];
-      notifyListeners();
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      final response = await apiClient.post('/reservas/$reservaId/cancelar');
+      final updated = Reserva.fromJson(response as Map<String, dynamic>);
+      ref.read(misReservasProvider.notifier).replaceOptimistic(reservaId, updated);
+
+      unawaited(ref.read(authProvider.notifier).refreshCurrentUser());
+
+      state = AsyncData(updated);
+      return true;
+    } catch (error, stackTrace) {
+      ref.read(misReservasProvider.notifier).setFromSnapshot(previousReservas);
+      state = AsyncError(error, stackTrace);
+      return false;
     }
   }
+}
 
-  /// Función que obtiene las reservas por espacio.
-  Future<void> fetchReservasBySpace(String spaceId) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/bookings/space/$spaceId'),
-      headers: {'Authorization': 'Bearer $_token'},
-    );
+Reserva _copyReservaWithEstado(Reserva reserva, EstadoReserva nuevoEstado) {
+  return Reserva(
+    id: reserva.id,
+    usuarioId: reserva.usuarioId,
+    espacioId: reserva.espacioId,
+    fechaInicio: reserva.fechaInicio,
+    fechaFin: reserva.fechaFin,
+    observaciones: reserva.observaciones,
+    estado: nuevoEstado,
+    tokensConsumidos: reserva.tokensConsumidos,
+    tramoId: reserva.tramoId,
+    tramo: reserva.tramo,
+    nombreUsuario: reserva.nombreUsuario,
+    nombreEspacio: reserva.nombreEspacio,
+    tipoEspacio: reserva.tipoEspacio,
+    createdAt: reserva.createdAt,
+    updatedAt: DateTime.now(),
+  );
+}
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final results = data['data'] as List<dynamic>;
-      _reservasBySpace = results
-          .map((reserva) => Reserva(
-                uuid: reserva['uuid'],
-                userId: reserva['userId'],
-                spaceId: reserva['spaceId'],
-                startTime: reserva['startTime'],
-                endTime: reserva['endTime'],
-                observations: reserva['observations'],
-                status: reserva['status'],
-                userName: reserva['userName'],
-                spaceName: reserva['spaceName'],
-                image: reserva['image'],
-              ))
-          .toList();
-
-      notifyListeners();
-    } else {
-      _reservasBySpace = [];
-      notifyListeners();
-    }
-  }
-
-  /// Función que obtiene las reservas por estado.
-  Future<void> fetchReservasByStatus(String status) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/bookings/status/$status'),
-      headers: {'Authorization': 'Bearer $_token'},
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final results = data['data'] as List<dynamic>;
-      _reservasByStatus = results
-          .map((reserva) => Reserva(
-                uuid: reserva['uuid'],
-                userId: reserva['userId'],
-                spaceId: reserva['spaceId'],
-                startTime: reserva['startTime'],
-                endTime: reserva['endTime'],
-                observations: reserva['observations'],
-                status: reserva['status'],
-                userName: reserva['userName'],
-                spaceName: reserva['spaceName'],
-                image: reserva['image'],
-              ))
-          .toList();
-
-      notifyListeners();
-    } else {
-      _reservasByStatus = [];
-      notifyListeners();
-    }
-  }
-
-  /// Función que obtiene las reservas por un tiempo.
-  Future<void> fetchReservasByTime(String time, String uuidSpace) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/bookings/time/$uuidSpace/$time'),
-      headers: {'Authorization': 'Bearer $_token'},
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final results = data['data'] as List<dynamic>;
-      _reservasByTime = results
-          .map((reserva) => Reserva(
-                uuid: reserva['uuid'],
-                userId: reserva['userId'],
-                spaceId: reserva['spaceId'],
-                startTime: reserva['startTime'],
-                endTime: reserva['endTime'],
-                observations: reserva['observations'],
-                status: reserva['status'],
-                userName: reserva['userName'],
-                spaceName: reserva['spaceName'],
-                image: reserva['image'],
-              ))
-          .toList();
-
-      notifyListeners();
-    } else {
-      _reservasByTime = [];
-      notifyListeners();
-    }
-  }
-
-  /// Función que obtiene los horarios ocupados por un espacio.
-  Future<List<String>> fetchOccupiedTimes(String time, String uuidSpace) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/bookings/time/$uuidSpace/$time'),
-      headers: {'Authorization': 'Bearer $_token'},
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final results = data['data'] as List<dynamic>;
-      return results
-          .map((reserva) => reserva['startTime'].toString())
-          .toList()
-          .cast<String>();
-    } else {
-      return [];
-    }
-  }
-
-  /// Función que agrega una reserva.
-  Future<void> addReserva(Reserva reserva) async {
-    final response = await http.post(Uri.parse('$baseUrl/bookings'),
-        headers: {
-          'Authorization': 'Bearer $_token',
-          'Content-Type': 'application/json'
-        },
-        body: jsonEncode(reserva.toJson()));
-
-    if (response.statusCode == 201) {
-      final data = jsonDecode(response.body);
-      _reservas.add(Reserva(
-        uuid: data['uuid'],
-        userId: data['userId'],
-        spaceId: data['spaceId'],
-        startTime: data['startTime'],
-        endTime: data['endTime'],
-        observations: data['observations'],
-        status: data['status'],
-        userName: data['userName'],
-        spaceName: data['spaceName'],
-        image: data['image'],
-      ));
-
-      notifyListeners();
-    } else {
-      throw Exception(response.body);
-    }
-  }
-
-  /// Función que actualiza una reserva.
-  Future<void> updateReserva(Reserva reserva) async {
-    final response = await http.put(
-        Uri.parse('$baseUrl/bookings/${reserva.uuid}'),
-        headers: {
-          'Authorization': 'Bearer $_token',
-          'Content-Type': 'application/json'
-        },
-        body: jsonEncode(reserva.toJson()));
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      _reservas[_reservas
-          .indexWhere((element) => element.uuid == reserva.uuid)] = Reserva(
-        uuid: data['uuid'],
-        userId: data['userId'],
-        spaceId: data['spaceId'],
-        startTime: data['startTime'],
-        endTime: data['endTime'],
-        observations: data['observations'],
-        status: data['status'],
-        userName: data['userName'],
-        spaceName: data['spaceName'],
-        image: data['image'],
-      );
-
-      notifyListeners();
-    } else {
-      throw Exception(response.body);
-    }
-  }
-
-  /// Función que elimina una reserva.
-  Future<void> deleteReserva(String uuid) async {
-    final response = await http.delete(Uri.parse('$baseUrl/bookings/$uuid'),
-        headers: {'Authorization': 'Bearer $_token'});
-
-    if (response.statusCode == 204) {
-      _reservas.removeWhere((element) => element.uuid == uuid);
-
-      notifyListeners();
-    } else {
-      throw Exception(response.body);
-    }
-  }
+String _toFriendlyMessage(Object error) {
+  if (error is ApiException) return error.message;
+  return 'No se pudo completar la operación. Inténtalo de nuevo.';
 }
