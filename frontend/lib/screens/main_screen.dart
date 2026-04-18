@@ -5,7 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:gestion_espacios_app/screens/buzon_screen.dart';
 import 'package:gestion_espacios_app/screens/public/espacios_screen.dart';
-import 'package:gestion_espacios_app/screens/inicio_screen.dart';
+import 'package:gestion_espacios_app/screens/welcome_screen.dart';
 import 'package:gestion_espacios_app/screens/perfil_screen.dart';
 import 'package:gestion_espacios_app/widgets/bottomnav_widget.dart';
 import 'package:gestion_espacios_app/widgets/drawer_widget.dart';
