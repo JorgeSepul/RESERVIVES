@@ -123,30 +123,13 @@ erDiagram
 Crea un archivo `.env` en `backend/` con la misma estructura que el archivo `.env.example` poniendo tus credenciales de OAtuh2 y Firebase.
 
 
-### 🛠 Comandos de Ejecución
+### 🛠 Comando de Ejecución
 
-#### Opción A: Orquestación con Docker (Full Stack)
+#### Orquestación con Docker (Full Stack)
 ```bash
 # Levanta BD, Backend y Frontend Web simultáneamente
 docker-compose up --build
 ```
-
-#### Opción B: Desarrollo Backend Manual
-```bash
-cd backend/reservivesAPI
-python -m venv .venv
-source .venv/bin/activate  # o .venv\Scripts\activate en Windows
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-#### Opción C: Desarrollo Frontend (Flutter)
-```bash
-cd frontend/RESERVIVES
-flutter pub get
-flutter run -d chrome  # o tu emulador/dispositivo móvil
-```
-
 ---
 
 ## 👥 Créditos y Autoría
