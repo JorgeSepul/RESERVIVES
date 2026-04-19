@@ -18,7 +18,7 @@ class MisReservasNotifier extends AsyncNotifier<List<Reserva>> {
   @override
   Future<List<Reserva>> build() async {
     final apiClient = ref.read(apiClientProvider);
-    final response = await apiClient.get('/reservas/');
+    final response = await apiClient.get('/reservas-espacios/');
     return (response as List)
         .map((e) => Reserva.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -135,7 +135,7 @@ class CrearReservaNotifier extends AsyncNotifier<Reserva?> {
       final apiClient = ref.read(apiClientProvider);
       // Formatear fecha como YYYY-MM-DD
       final fechaStr = '${fecha.year}-${fecha.month.toString().padLeft(2, '0')}-${fecha.day.toString().padLeft(2, '0')}';
-      final response = await apiClient.post('/reservas/', body: {
+      final response = await apiClient.post('/reservas-espacios/', body: {
         'espacio_id': espacioId,
         'fecha': fechaStr,
         'tramo_id': tramoId,
@@ -166,7 +166,7 @@ class CrearReservaNotifier extends AsyncNotifier<Reserva?> {
 
     try {
       final apiClient = ref.read(apiClientProvider);
-      final response = await apiClient.post('/reservas/$reservaId/cancelar');
+      final response = await apiClient.post('/reservas-espacios/$reservaId/cancelar');
       final updated = Reserva.fromJson(response as Map<String, dynamic>);
       ref.read(misReservasProvider.notifier).replaceOptimistic(reservaId, updated);
 
