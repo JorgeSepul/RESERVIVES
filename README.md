@@ -1,8 +1,8 @@
 <div align="center">
-  <img src="metadata/logo_luis_vives.png" width="200" alt="Reservives Logo" />
-  <h1>RESERVIVES APP</h1>
-  <p><strong>El sistema de gestión de reservas para recursos y espacios académicos.</strong></p>
-  
+  <img src="metadata/logo_luis_vives.png" width="180" alt="Reservives Logo" />
+  <h1>🚀 RESERVIVES APP</h1>
+  <p><strong>Ecosistema inteligente para la gestión de recursos, espacios y servicios académicos.</strong></p>
+
   <p>
     <img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter" />
     <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
@@ -11,22 +11,15 @@
   </p>
 </div>
 
-<hr>
+---
 
 ## 📖 Sobre el Proyecto
 
-**Reservives** es una aplicación diseñada para simplificar y modernizar el proceso de reserva de espacios, equipos y recursos para estudiantes y profesores del IES Luis Vives. 
+**Reservives** es una aplicación diseñada para simplificar y modernizar el proceso de reserva de espacios, equipos y recursos para estudiantes y profesores del IES Luis Vives. El sistema centraliza la gestión de pistas deportivas, aulas, servicios de departamentos y el tablón de anuncios, todo bajo un entorno seguro con autenticación **Microsoft OAuth**.
 
-## ✨ Características Principales
+---
 
-*   🔐 **Autenticación Segura & Microsoft OAuth**: Inicio de sesión integrado con cuentas institucionales.
-*   👥 **Gestión de Roles**: Interfaces adaptativas para Estudiantes, Profesores y Administradores (Backoffice).
-*   🌐 **Internacionalización (i18n)**: Soporte multi-idioma integrado desde la pantalla de bienvenida.
-*   🎨 **UX/UI**: Modo oscuro automatizado, efectos de glassmorphis y skeleton loaders.
-*   📋 **Panel de Administración**: Gestión y edición de usuarios, reservas y recursos.
-*   🐳 **Despliegue Sencillo**: Estructurado en contenedores Docker para levantar todos los servicios con un solo comando.
-
-## 🏗 Arquitectura y Estructura
+## 🏗 Estructura
 
 El proyecto se divide en diferentes directorios principales:
 
@@ -37,66 +30,124 @@ El proyecto se divide en diferentes directorios principales:
  ┣ 📂 database           # Ficheros de inicialización y migración (PostgreSQL)
  ┗ 📜 docker-compose.yml # Orquestación de múltiples contenedores
 ```
+---
 
-## 🚀 Cómo Empezar (Getting Started)
+## 🛠 Stack Tecnológico
 
-La forma más rápida y fácil de levantar todo el ecosistema de **Reservives** (Frontend web, Backend, Database) es a través de Docker.
+### 🎨 Frontend (Client)
+| Componente | Tecnología | Versión | Propósito |
+| :--- | :--- | :--- | :--- |
+| **Lenguaje** | Dart | `^3.11.3` | Lenguaje principal UI |
+| **Framework** | Flutter | `Latest Stable` | Desarrollo Multiplataforma (Web/Mobile) |
+| **Estado** | Riverpod | `^3.3.1` | Gestión de estado reactiva y asíncrona |
+| **Navegación** | GoRouter | `^17.1.0` | Enrutamiento declarativo |
+| **Estilos** | Google Fonts | `^8.0.2` | Tipografía moderna (Inter/Outfit) |
+| **Animaciones** | Flutter Animate| `^4.5.0` | Micro-interacciones premium |
+| **Notificaciones**| Firebase Cloud Messaging | `^16.0.1` | Push notifications en tiempo real |
 
-### Pre-requisitos
-* [Docker](https://www.docker.com/get-started) y Docker Compose instalados.
-* [Flutter SDK](https://docs.flutter.dev/get-started/install) (Si deseas correr la app en emuladores móbiles o desarrollar la UI localmente).
-* [Python 3.12](https://www.python.org/downloads/) (Para desarrollo local del backend sin Docker).
+### ⚙️ Backend (Server)
+| Componente | Tecnología | Versión | Propósito |
+| :--- | :--- | :--- | :--- |
+| **Lenguaje** | Python | `3.12` | Lógica de negocio |
+| **Framework** | FastAPI | `0.115.8` | API RESTful de alto rendimiento |
+| **ORM** | SQLAlchemy | `2.0.37` | Mapeo objeto-relacional asíncrono |
+| **Validación** | Pydantic | `2.10.6` | Esquemas de datos y validación |
+| **Seguridad** | MSAL / Jose | `1.31.1 / 3.3.0` | Microsoft EntraID & JWT Auth |
+| **Task Runner** | APScheduler | `3.11.0` | Tareas programadas (Recarga de tokens) |
+| **DB Driver** | Asyncpg | `0.30.0` | Driver PostgreSQL asíncrono |
 
-### Despliegue Rápido (Local)
+---
 
-1. **Clona el repositorio**
-   ```bash
-   git clone https://github.com/gonnzaxx/RESERVIVES.git
-   cd RESERVIVES
-   ```
+## 🏗 Arquitectura del Software
 
-2. **Levanta los contenedores**
-   La base de datos, el backend y el entorno de desarrollo web se iniciarán automáticamente.
-   ```bash
-   docker-compose up --build -d
-   ```
+El proyecto implementa una **Arquitectura Cliente-Servidor Multicapa**:
 
-3. **¡Accede a la app!**
-   * **Frontend Web**: Visita `http://localhost:2121` (Depende del puerto mapeado).
-   * **API Docs (Swagger)**: Visita `http://localhost:8000/docs`.
+### 🌐 Backend
+El flujo de datos en el servidor sigue el patrón:
+1.  **Router Layer**: Define los endpoints y parsea las peticiones (FastAPI).
+2.  **Service Layer**: Contiene la lógica de negocio pura (validaciones complejas, cálculos).
+3.  **Repository Layer**: Abstracción de acceso a datos (Querying con SQLAlchemy).
+4.  **Model Layer**: Definición de entidades de base de datos y esquemas Pydantic.
 
-### Desarrollo Local (Frontend - Flutter)
+### 📱 Frontend
+Utiliza una estructura de carpetas basada en dominios funcionales:
+-   `providers/`: Controladores de estado que exponen datos a la UI.
+-   `services/`: Clientes HTTP que consumen la API del backend.
+-   `screens/` & `widgets/`: Capa de presentación desacoplada de la lógica.
 
-Si deseas trabajar estrictamente en la versión móvil:
-```bash
-cd frontend
-flutter pub get
-flutter run
+---
+
+## 📊 Base de Datos
+
+El motor principal es **PostgreSQL 16**, optimizado con extensiones como `btree_gist` para el control estricto de solapamientos horarios mediante restricciones de exclusión nativas.
+
+### 📑 Diccionario de Datos (Principales Entidades)
+
+| Tabla | Descripción | Clave Primaria | Relaciones Clave |
+| :--- | :--- | :--- | :--- |
+| `usuarios` | Perfiles de alumnos y profesores. | `id (UUID)` | - |
+| `espacios` | Recursos físicos (Aulas, Pistas). | `id (UUID)` | - |
+| `reservas` | Control de ocupación de espacios. | `id (UUID)` | `usuario_id`, `espacio_id`, `tramo_id` |
+| `servicios_instituto` | Servicios de FP (Peluquería, etc). | `id (UUID)` | - |
+| `historial_tokens` | Auditoría de movimientos económicos. | `id (UUID)` | `usuario_id` |
+| `tramos_horarios` | Definición de periodos lectivos. | `id (UUID)` | - |
+| `encuestas` | Sistema de votaciones y feedback. | `id (UUID)` | - |
+
+### 🗺 Diagrama de Entidad-Relación
+
+```mermaid
+erDiagram
+    USUARIO ||--o{ RESERVA : realiza
+    USUARIO ||--o{ HISTORIAL_TOKENS : posee
+    USUARIO ||--o{ INCIDENCIA : reporta
+    ESPACIO ||--o{ RESERVA : es_reservado
+    ESPACIO ||--o{ ESPACIO_TRAMO : permite
+    TRAMO_HORARIO ||--o{ ESPACIO_TRAMO : configura
+    TRAMO_HORARIO ||--o{ RESERVA : asigna
+    SERVICIO ||--o{ RESERVA_SERVICIO : genera
+    USUARIO ||--o{ VOTO : emite
+    ENCUESTA ||--o{ OPCION : contiene
+    OPCION ||--o{ VOTO : recibe
 ```
 
-## 🛠 Tecnologías Utilizadas
+---
 
-### Frontend (App Móvil & Web)
-- **Framework**: [Flutter](https://flutter.dev/)
-- **Gestor de Estado**: Riverpod 3.3.1
-- **Estilos**: Theming y Localization adaptativa.
+## 🚀 Guía de Configuración Local
 
-### Backend (Servicio API)
-- **Framework**: Python 3 con [FastAPI](https://fastapi.tiangolo.com/)
-- **ORM**: SQLAlchemy
-- **Autenticación**: OAuth2
+### 📋 Requisitos Previos
+*   **Docker & Docker Compose** (Recomendado para despliegue rápido).
+*   **Flutter SDK** (3.11.x+) para desarrollo UI.
+*   **Python 3.12**.
 
-### Base de Datos & Infraestructura
-- **Base de datos**: PostgreSQL
-- **Contenedores**: Docker Compose
+### 🔑 Variables de Entorno (.env.example)
+Crea un archivo `.env` en `backend/` con la misma estructura que el archivo `.env.example` poniendo tus credenciales de OAtuh2 y Firebase.
 
-## 🤝 Contribuyendo
 
-1. Haz un Fork del proyecto
-2. Crea tu Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Haz Commit a tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Haz Push al Branch (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+### 🛠 Comandos de Ejecución
+
+#### Opción A: Orquestación con Docker (Full Stack)
+```bash
+# Levanta BD, Backend y Frontend Web simultáneamente
+docker-compose up --build
+```
+
+#### Opción B: Desarrollo Backend Manual
+```bash
+cd backend/reservivesAPI
+python -m venv .venv
+source .venv/bin/activate  # o .venv\Scripts\activate en Windows
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+#### Opción C: Desarrollo Frontend (Flutter)
+```bash
+cd frontend/RESERVIVES
+flutter pub get
+flutter run -d chrome  # o tu emulador/dispositivo móvil
+```
+
+---
 
 ## 👥 Créditos y Autoría
 
@@ -116,12 +167,16 @@ Evolución, rediseño y despliegue final por:
 - [Álvaro Lorenzo Carrillo](https://github.com/lorenZZo30)
 - [Jorge Sepúlveda Martín](https://github.com/JorgeSepul)
 
+---
+
 ## 📚 Documentación
 
 - [Anteproyecto](https://github.com/RuyMi/tfg-gestion-espacios/blob/main/metadata/Anteproyecto.pdf)
 - [Documentación del proyecto](https://github.com/RuyMi/tfg-gestion-espacios/blob/main/Proyecto%20Desarrolo%20de%20aplicaciones_IES%20Luis%20Vives.pdf)
 
+---
 
-## 📄 Licencia
+<div align="center">
+  <sub>Desarrollado con ❤️ para la comunidad educativa del IES Luis Vives.</sub>
+</div>
 
-Este proyecto está licenciado bajo la Licencia MIT. Consulte el archivo [LICENSE](LICENSE) para obtener más información.
