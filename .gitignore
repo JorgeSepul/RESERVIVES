@@ -1,0 +1,67 @@
+# ============================================================
+# RESERVIVES - Root GitIgnore
+# ============================================================
+
+# Environment files and Secrets
+.env
+*.env
+.env.*
+secrets/
+*.json
+!*.example.json
+!firebase.example.json
+!google-services.example.json
+
+# Firebase Admin SDK (CRITICAL)
+*-firebase-adminsdk-*.json
+
+# Databases and Local Data
+database/data/
+pgdata/
+*.db
+*.sqlite
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python - Virtual Environments and Caches
+.venv/
+venv/
+env/
+virtualenv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Python - Build and Distribution
+build/
+dist/
+*.egg-info/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+frontend/build/
+frontend/.dart_tool/
+
+# Backend specific
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Subdirectories with their own gitignores are still respected
+# but keeping critical secrets here as a second layer of defense.

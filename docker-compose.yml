@@ -1,0 +1,86 @@
+# ============================================================
+# RESERVIVES - Docker Compose
+# ============================================================
+# Despliega los 3 servicios: PostgreSQL, Backend (FastAPI), Frontend (Flutter Web)
+#
+# Uso:
+#   docker-compose up --build
+#
+# Acceso:
+#   - Frontend Web:  http://localhost:2121
+#   - Backend API:   http://localhost:8000/api/docs
+#   - PostgreSQL:    localhost:5432
+# ============================================================
+
+version: "3.9"
+
+services:
+  # ========================================
+  # Base de datos PostgreSQL
+  # ========================================
+  db:
+    image: postgres:16-alpine
+    container_name: reservives-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U reservives -d reservives_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ========================================
+  # Backend - Python + FastAPI
+  # ========================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: reservives-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      APP_DEBUG: ${APP_DEBUG:-false}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      FIREBASE_ENABLED: ${FIREBASE_ENABLED:-false}
+      FIREBASE_CREDENTIALS_PATH: ${FIREBASE_CREDENTIALS_PATH}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ========================================
+  # Frontend - Flutter Web
+  # ========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: reservives-frontend
+    restart: unless-stopped
+    ports:
+      - "2121:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    driver: local
